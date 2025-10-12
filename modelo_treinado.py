@@ -1,9 +1,23 @@
-# modelo_treinado.py
 import lightning as L
 from torch import nn
 from lightning.pytorch.callbacks import ModelCheckpoint
 from lightning.pytorch import Trainer
 from torchmetrics import Accuracy
+from torchvision import transforms
+# Scikit-Learn
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import confusion_matrix
+
+TAXA_DE_APRENDIZADO = 0.001
+
+checkpoint_callback = ModelCheckpoint(
+    monitor="valid_loss",  # aqui deve bater com self.log
+    dirpath="checkpoints",
+    filename="melhor-modelo",
+    save_top_k=1,
+    mode="min"
+)
+
 
 class CNN(L.LightningModule):
 
@@ -129,17 +143,81 @@ class CNN(L.LightningModule):
     def predict_step(self, batch, batch_idx, dataloader_idx=0):
         return self(batch)
 
-# minha_cnn = CNN.load_from_checkpoint("melhor-modelo.ckpt")
-minha_cnn = CNN.load_from_checkpoint("melhor-modelo.ckpt")
-minha_cnn.eval()
 
-minha_cnn.eval()
+TAMANHO_VALIDACAO = 1/9
+SEMENTE_ALEATORIA = 1110
+
+class DataModule(L.LightningDataModule):
+    def __init__(self, data_path: str = './'):
+        super().__init__()
+        self.data_path = data_path
+
+        # transformação (tensorização)
+        self.transform = transforms.Compose([
+            transforms.ToTensor()
+        ])
+
+    ##########################################################
+    #     Baixando os dados
+    ##########################################################
+
+        # descompacta os dados
+        caminho_zip = 'mhjyrn35p4-2.zip'
+        pasta_dados = "dados"
+        try:
+            with ZipFile(caminho_zip, 'r') as zip_obj:
+                zip_obj.extractall(pasta_dados)
+            print(f"Arquivos extraídos em '{pasta_dados}'.")
+        except Exception as e:
+            print(f"Erro ao descompactar: {e}")
+
+        # monta DataFrame
+        caminho_ben = os.path.join(pasta_dados, "Oral Images Dataset", "augmented_data", "augmented_benign", "*.jpg")
+        caminho_mal = os.path.join(pasta_dados, "Oral Images Dataset", "augmented_data", "augmented_malignant", "*.jpg")
+
+        imagens_ben = glob.glob(caminho_ben)
+        imagens_mal = glob.glob(caminho_mal)
+
+        df_ben = pd.DataFrame({"path": imagens_ben, "label": 0})
+        df_mal = pd.DataFrame({"path": imagens_mal, "label": 1})
+        self.df = pd.concat([df_ben, df_mal], ignore_index=True)
+
+
+    def setup(self, stage=None):
+        # Divide o dataset uma única vez
+        df_train, df_test = train_test_split(
+            self.df, test_size=TAMANHO_VALIDACAO, random_state=SEMENTE_ALEATORIA
+        )
+        df_train, df_val = train_test_split(
+            df_train, test_size=TAMANHO_VALIDACAO, random_state=SEMENTE_ALEATORIA
+        )
+    
+        # Cria os datasets conforme o estágio
+        if stage == "fit" or stage is None:
+            self.train = OralCancerDatasetDF(df_train, transform=self.transform)
+            self.val = OralCancerDatasetDF(df_val, transform=self.transform)
+    
+        if stage == "test" or stage is None:
+            self.test = OralCancerDatasetDF(df_test, transform=self.transform)
+
+
+    def train_dataloader(self):
+        return DataLoader(self.train, batch_size=64, shuffle=True, num_workers=0)
+
+    def val_dataloader(self):
+        return DataLoader(self.val, batch_size=64, num_workers=0)
+
+    def test_dataloader(self):
+        return DataLoader(self.test, batch_size=64, num_workers=0)
+
+
+modelo_geral = CNN.load_from_checkpoint("checkpoints/melhor-modelo-v2.ckpt") ##################################################
 
 from torch.utils.data import TensorDataset, DataLoader
 from torchvision import transforms
 from PIL import Image
 
-image_path = "teste_modelo.jpg"
+image_path = "teste_modelo.png"
 
 # Define o mesmo pré-processamento usado no treino
 transform = transforms.Compose([
@@ -166,7 +244,7 @@ def predict_image(model, dataloader):
     return predictions
 
 # Faz a predição
-predictions = predict_image(minha_cnn, dataloader)
+predictions = predict_image(modelo_geral, dataloader)
 
 # Supondo que predictions seja uma lista de tensores
 pred_tensor = predictions[0]  # pega a predição do batch único
@@ -177,5 +255,5 @@ if prob > 0.6:
 elif prob > 0.4:
     classe = "Inconclusivo"
 else:
-    prob = "Benigno"
+    classe = "Benigno"
 

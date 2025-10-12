@@ -1,7 +1,7 @@
 # --- Framework principal da API ---
 flask==3.0.3
 flask-cors==5.0.0
-
+gunicorn==21.2.0  # <-- adiciona isso
 # --- Processamento de imagem ---
 pillow==10.4.0
 

@@ -1,70 +1,68 @@
+# app.py
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import torch
 from torchvision import transforms
 from PIL import Image
 import io
-from modelo_treinado import CNN  # importa sua classe definida
+from modelo_treinado import CNN  
 
 app = Flask(__name__)
-CORS(app)  # 🔥 permite o React acessar a API
+CORS(app)
 
-# ==============================================================
-# 1️⃣ CARREGAR O MODELO
-# ==============================================================
-
-# Cria instância do modelo exatamente como foi treinado
-model = CNN.load_from_checkpoint("melhor-modelo.ckpt", map_location=torch.device("cpu"))
+# ===============================
+# 1️⃣ Carregar modelo treinado
+# ===============================
+model = CNN.load_from_checkpoint("cnn_geral.ckpt", map_location=torch.device("cpu"))
 model.eval()
 
-# ==============================================================
-# 2️⃣ DEFINIR TRANSFORMAÇÕES IGUAIS ÀS DO TREINAMENTO
-# ==============================================================
+# ===============================
+# 2️⃣ Transformações iguais às do treino
+# ===============================
 transform = transforms.Compose([
-    transforms.Resize((224, 224)),
+    transforms.Resize((224, 224)),  # ajusta ao tamanho esperado
     transforms.ToTensor(),
-    transforms.Normalize([0.485, 0.456, 0.406],
-                         [0.229, 0.224, 0.225]),
 ])
 
-# ==============================================================
-# 3️⃣ ROTA DE ANÁLISE DE IMAGEM
-# ==============================================================
-@app.route("/analisar", methods=["POST"])
+# ===============================
+# 3️⃣ Rota para análise
+# ===============================
+@app.route('/analisar', methods=['POST'])
 def analisar_imagem():
-    try:
-        if "imagem" not in request.files:
-            return jsonify({"erro": "Nenhuma imagem enviada"}), 400
+    if 'imagem' not in request.files:
+        return jsonify({'erro': 'Nenhuma imagem enviada'}), 400
 
-        arquivo = request.files["imagem"]
+    try:
+        arquivo = request.files['imagem']
         imagem = Image.open(io.BytesIO(arquivo.read())).convert("RGB")
 
         # aplica transformações
         tensor = transform(imagem).unsqueeze(0)  # [1, C, H, W]
 
-        # roda o modelo
         with torch.no_grad():
-            saida = model(tensor)
-            probabilidades = torch.softmax(saida, dim=1)[0]
-            prob, classe_predita = torch.max(probabilidades, 0)
+            prob = model(tensor).item()
 
-        # mapeia o índice para nome da classe
-        # (ajuste conforme seu modelo)
-        classes = ["Sem indícios de câncer", "Possível lesão detectada"]
-        resultado = classes[classe_predita.item()]
-        probabilidade = float(prob.item())
+        # interpreta o resultado
+        if prob > 0.6:
+            classe = "Maligno"
+        elif prob > 0.4:
+            classe = "Inconclusivo"
+        else:
+            classe = "Benigno"
 
         return jsonify({
-            "resultado": resultado,
-            "probabilidade": probabilidade
+            "resultado": classe,
+            "probabilidade": float(prob)
         })
 
     except Exception as e:
-        print("Erro:", e)
+        print("Erro na análise:", e)
         return jsonify({"erro": str(e)}), 500
 
-# ==============================================================
-# 4️⃣ RODAR SERVIDOR
-# ==============================================================
+# ===============================
+# 4️⃣ Rodar servidor
+# ===============================
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    import os
+    port = int(os.environ.get("PORT", 8080))  # pega a porta do Cloud Run ou usa 8080
+    app.run(host="0.0.0.0", port=port)
