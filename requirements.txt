@@ -4,10 +4,9 @@ gunicorn==21.2.0
 
 pillow==10.4.0
 
-torch==2.8.0+cpu
-torchvision==0.15.3+cpu
-torchaudio==2.8.0+cpu
---extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.8.0
+torchvision==0.15.3
+torchaudio==2.8.0
 
 lightning==2.8.0
 torchmetrics==1.4.0
