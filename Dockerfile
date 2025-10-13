@@ -13,7 +13,7 @@ ENV PYTHONUNBUFFERED=1
 # Etapa 3: Instalar dependências
 # ===============================
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cpu
 
 # ===============================
 # Etapa 4: Copiar TODOS os arquivos da sua aplicação

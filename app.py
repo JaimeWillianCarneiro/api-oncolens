@@ -9,7 +9,7 @@ from modelo_treinado import CNN
 
 app = Flask(__name__)
 
-CORS(app, resources={r"/*": {"origins": "*"}})
+CORS(app, resources={r"/analisar": {"origins": "https://jaimewilliancarneiro.github.io"}})
 
 # ===============================
 # 1️⃣ Carregar modelo treinado
