@@ -6,7 +6,7 @@ gunicorn==21.2.0
 # --- Processamento de imagem ---
 pillow==10.4.0
 
-# --- PyTorch (CPU) ---
+# --- PyTorch (CPU version) compatível com Python 3.13 ---
 torch==2.8.0+cpu
 torchvision==0.15.2+cpu
 torchaudio==2.8.0+cpu
