@@ -1,25 +1,29 @@
-# Imagem base Python slim
-FROM python:3.11-slim
+# ===============================
+# Etapa 1: Imagem base
+# ===============================
+FROM python:3.10-slim
 
-# Diretório de trabalho
+# ===============================
+# Etapa 2: Diretório de trabalho e variáveis de ambiente
+# ===============================
 WORKDIR /app
-
-# Copiar requirements
-COPY requirements.txt requirements.txt
-
-# Instalar dependências, incluindo PyTorch CPU
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
-
-# Copiar todo o código
-COPY . .
-
-# Expor a porta que o Cloud Run vai usar
-EXPOSE 8080
-
-# Variáveis de ambiente
-ENV PORT=8080
 ENV PYTHONUNBUFFERED=1
 
-# Comando para rodar o Flask com Gunicorn
-CMD ["gunicorn", "--bind", "0.0.0.0:8080", "app:app"]
+# ===============================
+# Etapa 3: Instalar dependências
+# ===============================
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# ===============================
+# Etapa 4: Copiar TODOS os arquivos da sua aplicação
+# ===============================
+# Este comando copia app.py, modelo_treinado.py, cnn_geral.ckpt, etc.
+COPY . .
+
+# ===============================
+# Etapa 5: Expor porta e usar Gunicorn para iniciar
+# ===============================
+EXPOSE 8080
+# O Gunicorn é um servidor de produção. Esta é a forma correta de iniciar a API.
+CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--workers", "1", "--threads", "8", "--timeout", "0", "app:app"]

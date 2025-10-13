@@ -8,7 +8,8 @@ import io
 from modelo_treinado import CNN  
 
 app = Flask(__name__)
-CORS(app)
+
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 # ===============================
 # 1️⃣ Carregar modelo treinado
@@ -59,10 +60,10 @@ def analisar_imagem():
         print("Erro na análise:", e)
         return jsonify({"erro": str(e)}), 500
 
-# ===============================
-# 4️⃣ Rodar servidor
-# ===============================
-if __name__ == "__main__":
-    import os
-    port = int(os.environ.get("PORT", 8080))  # pega a porta do Cloud Run ou usa 8080
-    app.run(host="0.0.0.0", port=port)
+# # ===============================
+# # 4️⃣ Rodar servidor
+# # ===============================
+# if __name__ == "__main__":
+#     import os
+#     port = int(os.environ.get("PORT", 8080))  # pega a porta do Cloud Run ou usa 8080
+#     app.run(host="0.0.0.0", port=port)

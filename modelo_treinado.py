@@ -10,13 +10,13 @@ from sklearn.metrics import confusion_matrix
 
 TAXA_DE_APRENDIZADO = 0.001
 
-checkpoint_callback = ModelCheckpoint(
-    monitor="valid_loss",  # aqui deve bater com self.log
-    dirpath="checkpoints",
-    filename="melhor-modelo",
-    save_top_k=1,
-    mode="min"
-)
+# checkpoint_callback = ModelCheckpoint(
+#     monitor="valid_loss",  # aqui deve bater com self.log
+#     dirpath="checkpoints",
+#     filename="melhor-modelo",
+#     save_top_k=1,
+#     mode="min"
+# )
 
 
 class CNN(L.LightningModule):
@@ -144,116 +144,115 @@ class CNN(L.LightningModule):
         return self(batch)
 
 
-TAMANHO_VALIDACAO = 1/9
-SEMENTE_ALEATORIA = 1110
+# TAMANHO_VALIDACAO = 1/9
+# SEMENTE_ALEATORIA = 1110
 
-class DataModule(L.LightningDataModule):
-    def __init__(self, data_path: str = './'):
-        super().__init__()
-        self.data_path = data_path
+# class DataModule(L.LightningDataModule):
+#     def __init__(self, data_path: str = './'):
+#         super().__init__()
+#         self.data_path = data_path
 
-        # transformação (tensorização)
-        self.transform = transforms.Compose([
-            transforms.ToTensor()
-        ])
+#         # transformação (tensorização)
+#         self.transform = transforms.Compose([
+#             transforms.ToTensor()
+#         ])
 
-    ##########################################################
-    #     Baixando os dados
-    ##########################################################
+#     ##########################################################
+#     #     Baixando os dados
+#     ##########################################################
 
-        # descompacta os dados
-        caminho_zip = 'mhjyrn35p4-2.zip'
-        pasta_dados = "dados"
-        try:
-            with ZipFile(caminho_zip, 'r') as zip_obj:
-                zip_obj.extractall(pasta_dados)
-            print(f"Arquivos extraídos em '{pasta_dados}'.")
-        except Exception as e:
-            print(f"Erro ao descompactar: {e}")
+#         # descompacta os dados
+#         caminho_zip = 'mhjyrn35p4-2.zip'
+#         pasta_dados = "dados"
+#         try:
+#             with ZipFile(caminho_zip, 'r') as zip_obj:
+#                 zip_obj.extractall(pasta_dados)
+#             print(f"Arquivos extraídos em '{pasta_dados}'.")
+#         except Exception as e:
+#             print(f"Erro ao descompactar: {e}")
 
-        # monta DataFrame
-        caminho_ben = os.path.join(pasta_dados, "Oral Images Dataset", "augmented_data", "augmented_benign", "*.jpg")
-        caminho_mal = os.path.join(pasta_dados, "Oral Images Dataset", "augmented_data", "augmented_malignant", "*.jpg")
+#         # monta DataFrame
+#         caminho_ben = os.path.join(pasta_dados, "Oral Images Dataset", "augmented_data", "augmented_benign", "*.jpg")
+#         caminho_mal = os.path.join(pasta_dados, "Oral Images Dataset", "augmented_data", "augmented_malignant", "*.jpg")
 
-        imagens_ben = glob.glob(caminho_ben)
-        imagens_mal = glob.glob(caminho_mal)
+#         imagens_ben = glob.glob(caminho_ben)
+#         imagens_mal = glob.glob(caminho_mal)
 
-        df_ben = pd.DataFrame({"path": imagens_ben, "label": 0})
-        df_mal = pd.DataFrame({"path": imagens_mal, "label": 1})
-        self.df = pd.concat([df_ben, df_mal], ignore_index=True)
+#         df_ben = pd.DataFrame({"path": imagens_ben, "label": 0})
+#         df_mal = pd.DataFrame({"path": imagens_mal, "label": 1})
+#         self.df = pd.concat([df_ben, df_mal], ignore_index=True)
 
 
-    def setup(self, stage=None):
-        # Divide o dataset uma única vez
-        df_train, df_test = train_test_split(
-            self.df, test_size=TAMANHO_VALIDACAO, random_state=SEMENTE_ALEATORIA
-        )
-        df_train, df_val = train_test_split(
-            df_train, test_size=TAMANHO_VALIDACAO, random_state=SEMENTE_ALEATORIA
-        )
+#     def setup(self, stage=None):
+#         # Divide o dataset uma única vez
+#         df_train, df_test = train_test_split(
+#             self.df, test_size=TAMANHO_VALIDACAO, random_state=SEMENTE_ALEATORIA
+#         )
+#         df_train, df_val = train_test_split(
+#             df_train, test_size=TAMANHO_VALIDACAO, random_state=SEMENTE_ALEATORIA
+#         )
     
-        # Cria os datasets conforme o estágio
-        if stage == "fit" or stage is None:
-            self.train = OralCancerDatasetDF(df_train, transform=self.transform)
-            self.val = OralCancerDatasetDF(df_val, transform=self.transform)
+#         # Cria os datasets conforme o estágio
+#         if stage == "fit" or stage is None:
+#             self.train = OralCancerDatasetDF(df_train, transform=self.transform)
+#             self.val = OralCancerDatasetDF(df_val, transform=self.transform)
     
-        if stage == "test" or stage is None:
-            self.test = OralCancerDatasetDF(df_test, transform=self.transform)
+#         if stage == "test" or stage is None:
+#             self.test = OralCancerDatasetDF(df_test, transform=self.transform)
 
 
-    def train_dataloader(self):
-        return DataLoader(self.train, batch_size=64, shuffle=True, num_workers=0)
+#     def train_dataloader(self):
+#         return DataLoader(self.train, batch_size=64, shuffle=True, num_workers=0)
 
-    def val_dataloader(self):
-        return DataLoader(self.val, batch_size=64, num_workers=0)
+#     def val_dataloader(self):
+#         return DataLoader(self.val, batch_size=64, num_workers=0)
 
-    def test_dataloader(self):
-        return DataLoader(self.test, batch_size=64, num_workers=0)
+#     def test_dataloader(self):
+#         return DataLoader(self.test, batch_size=64, num_workers=0)
 
 
-modelo_geral = CNN.load_from_checkpoint("checkpoints/melhor-modelo-v2.ckpt") ##################################################
 
-from torch.utils.data import TensorDataset, DataLoader
-from torchvision import transforms
-from PIL import Image
+# from torch.utils.data import TensorDataset, DataLoader
+# from torchvision import transforms
+# from PIL import Image
 
-image_path = "teste_modelo.png"
+# image_path = "teste_modelo.png"
 
-# Define o mesmo pré-processamento usado no treino
-transform = transforms.Compose([
-    transforms.ToTensor(),
-])
+# # Define o mesmo pré-processamento usado no treino
+# transform = transforms.Compose([
+#     transforms.ToTensor(),
+# ])
 
-# Carrega e transforma a imagem
-image = Image.open(image_path).convert("RGB")
-image_tensor = transform(image).unsqueeze(0)  # adiciona dimensão batch
+# # Carrega e transforma a imagem
+# image = Image.open(image_path).convert("RGB")
+# image_tensor = transform(image).unsqueeze(0)  # adiciona dimensão batch
 
-# Coloca no TensorDataset
-dataset = TensorDataset(image_tensor)
-dataloader = DataLoader(dataset, batch_size=1)
+# # Coloca no TensorDataset
+# dataset = TensorDataset(image_tensor)
+# dataloader = DataLoader(dataset, batch_size=1)
 
-trainer = Trainer(accelerator="auto", devices=1, logger=False)
+# trainer = Trainer(accelerator="auto", devices=1, logger=False)
 
-# Função para predição corrigida
-def predict_image(model, dataloader):
-    predictions = []
-    for batch in dataloader:
-        x = batch[0]  # descompacta o tensor da tupla
-        preds = model(x)  # passa pelo modelo
-        predictions.append(preds)
-    return predictions
+# # Função para predição corrigida
+# def predict_image(model, dataloader):
+#     predictions = []
+#     for batch in dataloader:
+#         x = batch[0]  # descompacta o tensor da tupla
+#         preds = model(x)  # passa pelo modelo
+#         predictions.append(preds)
+#     return predictions
 
-# Faz a predição
-predictions = predict_image(modelo_geral, dataloader)
+# # Faz a predição
+# predictions = predict_image(modelo_geral, dataloader)
 
-# Supondo que predictions seja uma lista de tensores
-pred_tensor = predictions[0]  # pega a predição do batch único
-prob = pred_tensor.item()     # transforma em número
+# # Supondo que predictions seja uma lista de tensores
+# pred_tensor = predictions[0]  # pega a predição do batch único
+# prob = pred_tensor.item()     # transforma em número
 
-if prob > 0.6:
-    classe = "Maligno"
-elif prob > 0.4:
-    classe = "Inconclusivo"
-else:
-    classe = "Benigno"
+# if prob > 0.6:
+#     classe = "Maligno"
+# elif prob > 0.4:
+#     classe = "Inconclusivo"
+# else:
+#     classe = "Benigno"
 
