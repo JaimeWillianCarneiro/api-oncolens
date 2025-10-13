@@ -1,16 +1,20 @@
-flask==3.0.3
-flask-cors==5.0.0
-gunicorn==21.2.0
-
-pillow==10.4.0
-
+# PyTorch e dependências
 torch==2.8.0
 torchvision==0.23.0
 torchaudio==2.8.0
 
+# Lightning compatível
+lightning==2.4.0
+torchmetrics==1.14.0  # ou a mais recente compatível com Lightning
 
-lightning==2.8.0
-torchmetrics==1.4.0
+# Framework da API
+flask==3.0.3
+flask-cors==5.0.0
+gunicorn==21.2.0
 
+# Processamento de imagens
+pillow==10.4.0
+
+# Utilitários
 numpy==1.26.4
 typing-extensions==4.12.2
