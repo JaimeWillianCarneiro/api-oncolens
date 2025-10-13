@@ -6,10 +6,11 @@ gunicorn==21.2.0  # <-- adiciona isso
 pillow==10.4.0
 
 # --- PyTorch (CPU version) ---
-torch==2.4.1+cpu
-torchvision==0.19.1+cpu
-torchaudio==2.4.1+cpu
+torch==2.8.0+cpu
+torchvision==0.15.2+cpu
+torchaudio==2.8.0+cpu
 --extra-index-url https://download.pytorch.org/whl/cpu
+
 
 # --- PyTorch Lightning (treino e checkpoint) ---
 lightning==2.4.0
