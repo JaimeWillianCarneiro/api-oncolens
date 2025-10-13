@@ -1,21 +1,16 @@
-# --- Framework principal da API ---
 flask==3.0.3
 flask-cors==5.0.0
 gunicorn==21.2.0
 
-# --- Processamento de imagem ---
 pillow==10.4.0
 
-# --- PyTorch compatível com Python 3.13.4 (CPU) ---
 torch==2.8.0+cpu
-torchvision==0.15.2+cpu
+torchvision==0.15.3+cpu
 torchaudio==2.8.0+cpu
 --extra-index-url https://download.pytorch.org/whl/cpu
 
-# --- PyTorch Lightning ---
 lightning==2.8.0
-torchmetrics==1.1.0
+torchmetrics==1.4.0
 
-# --- Utilitários gerais ---
 numpy==1.26.4
 typing-extensions==4.12.2
