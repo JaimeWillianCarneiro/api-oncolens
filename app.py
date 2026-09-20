@@ -5,7 +5,7 @@ import torch
 from torchvision import transforms
 from PIL import Image
 import io
-from modelo_treinado import CNN  
+from src.modelo_treinado import CNN  
 
 app = Flask(__name__)
 
