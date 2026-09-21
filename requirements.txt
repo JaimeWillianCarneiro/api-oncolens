@@ -1,25 +1,12 @@
-# requirements.txt
-
-# --- Framework principal da API ---
 flask==3.0.3
 flask-cors==5.0.0
 gunicorn==21.2.0
-
-# Processamento de imagens
 pillow==10.4.0
-
-# --- PyTorch (CPU version) ---
 torch==2.8.0+cpu
 torchvision==0.15.2+cpu
 torchaudio==2.8.0+cpu
-
-# --- PyTorch Lightning (treino e checkpoint) ---
 lightning==2.4.0
 torchmetrics==1.4.2
-
-# --- Utilitários gerais ---
 numpy==1.26.4
 typing-extensions==4.12.2
-
-# --- Machine Learning Utilities ---
-scikit-learn==1.5.0  # <-- ADICIONE ESTA LINHA
+scikit-learn==1.5.0  
