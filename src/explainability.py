@@ -20,13 +20,15 @@ class SuperpixelGraphExplainer:
         device: str = "cpu",
     ):
         self.model = model.to(device)
-        self.model.eval()
+        self.model.eval() #
         self.n_segments = n_segments
         self.compactness = compactness
         self.num_samples = num_samples
         self.kernel_width = kernel_width
         self.device = device
-
+        hparams = getattr(model, "hparams", None)
+        self.input_height = getattr(hparams, "input_height", 224)
+        self.input_width = getattr(hparams, "input_width", 224)
     def build_superpixel_graph(self, img_np: np.ndarray):
         """
         Segmenta a imagem (224x224x3, float [0,1]) via SLIC e constrói:
@@ -121,7 +123,7 @@ class SuperpixelGraphExplainer:
         - fidelity_drop: queda de probabilidade ao remover os top-5 superpixels
         """
         rng = np.random.default_rng(seed)
-        img_resized = pil_image.convert("RGB").resize((224, 224))
+        img_resized = pil_image.convert("RGB").resize((self.input_width, self.input_height))
         img_np = np.asarray(img_resized, dtype=np.float32) / 255.0
 
         segments, node_features, adj = self.build_superpixel_graph(img_np)
@@ -131,7 +133,8 @@ class SuperpixelGraphExplainer:
         baseline_color = img_np.mean(axis=(0, 1))  # Cor média para oclusão
 
         # Constrói imagens perturbadas
-        perturbed_imgs = np.empty((self.num_samples, 224, 224, 3), dtype=np.float32)
+        perturbed_imgs = np.empty((self.num_samples, self.input_height, self.input_width, 3))
+
         for i in range(self.num_samples):
             active_mask = Z[i][segments] > 0.5  # [224, 224]
             img_p = np.where(active_mask[..., None], img_np, baseline_color)
