@@ -7,6 +7,7 @@ from torchvision import transforms
 # Scikit-Learn
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import confusion_matrix
+import torch
 
 TAXA_DE_APRENDIZADO = 0.001
 
@@ -142,6 +143,99 @@ class CNN(L.LightningModule):
 
     def predict_step(self, batch, batch_idx, dataloader_idx=0):
         return self(batch)
+
+# ----------------------------
+# Definição do modelo
+# ----------------------------
+class CNNLightning(L.LightningModule):
+    def __init__(self,
+                 n_conv_layers,
+                 n_filters,
+                 kernel_size,
+                 activation_name,
+                 dropout,
+                 learning_rate,
+                 input_channels,
+                 input_height,
+                 input_width,
+                 num_classes=1):
+
+        super().__init__()
+        self.save_hyperparameters()
+
+        # Função de ativação
+        if activation_name.lower() == "relu":
+            activation = nn.ReLU()
+        elif activation_name.lower() == "sigmoid":
+            activation = nn.Sigmoid()
+        else:
+            raise ValueError(f"Ativação {activation_name} não suportada")
+
+        # Camadas convolucionais
+        layers = []
+        in_channels = input_channels
+        for _ in range(n_conv_layers):
+            layers.append(nn.Conv2d(in_channels, n_filters, kernel_size, padding=kernel_size//2))
+            layers.append(activation)
+            layers.append(nn.MaxPool2d(2))
+            layers.append(nn.Dropout(dropout))
+            in_channels = n_filters
+        self.conv = nn.Sequential(*layers)
+
+        # Calcula tamanho da saída da convolução
+        self._conv_output_size = self._get_conv_output((input_channels, input_height, input_width))
+
+        # Camada totalmente conectada
+        self.fc = nn.Sequential(
+            nn.Linear(self._conv_output_size, num_classes),
+            nn.Sigmoid()
+        )
+
+        # Função de perda e learning rate
+        self.loss_fn = nn.BCELoss()
+        self.learning_rate = learning_rate
+
+        # Métricas
+        self.train_acc = Accuracy(task="binary")
+        self.val_acc = Accuracy(task="binary")
+
+    def _get_conv_output(self, shape):
+        bs = 1
+        x = torch.zeros(bs, *shape)
+        x = self.conv(x)
+        return int(torch.prod(torch.tensor(x.shape[1:])))
+
+    def forward(self, x):
+        x = self.conv(x)
+        x = torch.flatten(x, 1)
+        x = self.fc(x)
+        return x
+
+    def training_step(self, batch, batch_idx):
+        x, y = batch
+        y = y.unsqueeze(1).float()
+        logits = self(x)
+        loss = self.loss_fn(logits, y)
+        preds = (logits > 0.5).float()
+        self.train_acc(preds, y)
+        self.log("train_loss", loss, on_step=False, on_epoch=True)
+        self.log("train_acc", self.train_acc, on_step=False, on_epoch=True)
+        return loss
+
+    def validation_step(self, batch, batch_idx):
+        x, y = batch
+        y = y.unsqueeze(1).float()
+        logits = self(x)
+        loss = self.loss_fn(logits, y)
+        preds = (logits > 0.5).float()
+        self.val_acc(preds, y)
+        self.log("val_loss", loss, on_step=False, on_epoch=True)
+        self.log("val_acc", self.val_acc, on_step=False, on_epoch=True)
+        return loss
+
+    def configure_optimizers(self):
+        return torch.optim.Adam(self.parameters(), lr=self.learning_rate)
+
 
 
 # TAMANHO_VALIDACAO = 1/9
