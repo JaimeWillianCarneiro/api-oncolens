@@ -1,0 +1,104 @@
+{
+  "arquitetura": "CNNLightning",
+  "hparams_do_ckpt": {
+    "n_conv_layers": 3,
+    "n_filters": 50,
+    "kernel_size": 3,
+    "activation_name": "relu",
+    "dropout": 0.11998429798463187,
+    "learning_rate": 0.00021168375865669698,
+    "input_channels": 3,
+    "input_height": 304,
+    "input_width": 304,
+    "num_classes": 1
+  },
+  "tamanho_entrada": [
+    304,
+    304
+  ],
+  "ckpt_original (split de treino desconhecido)": {
+    "val": {
+      "n_imagens": 205,
+      "acuracia": 0.7804877758026123,
+      "bce": 0.4493395686149597,
+      "f1": 0.7428571428571429,
+      "matriz_confusao": [
+        [
+          95,
+          9
+        ],
+        [
+          36,
+          65
+        ]
+      ],
+      "limiar": 0.5,
+      "tempo_inferencia_s": 19.561708500026725,
+      "tempo_por_imagem_ms": 95.4229682928133
+    },
+    "test": {
+      "n_imagens": 227,
+      "acuracia": 0.8017621040344238,
+      "bce": 0.39925357699394226,
+      "f1": 0.7619047619047619,
+      "matriz_confusao": [
+        [
+          110,
+          5
+        ],
+        [
+          40,
+          72
+        ]
+      ],
+      "limiar": 0.5,
+      "tempo_inferencia_s": 18.850652099994477,
+      "tempo_por_imagem_ms": 83.04252026429285
+    }
+  },
+  "retreinado_splits_fixos": {
+    "epocas": 10,
+    "batch_size": 64,
+    "learning_rate": 0.00021168375865669698,
+    "tempo_treino_s": 2151.0790303999966,
+    "ckpt": "models/baseline_splits_fixos.ckpt",
+    "val": {
+      "n_imagens": 205,
+      "acuracia": 0.7804877758026123,
+      "bce": 0.49524369835853577,
+      "f1": 0.7738693467336684,
+      "matriz_confusao": [
+        [
+          83,
+          21
+        ],
+        [
+          24,
+          77
+        ]
+      ],
+      "limiar": 0.5,
+      "tempo_inferencia_s": 37.71493040001951,
+      "tempo_por_imagem_ms": 183.9752702439976
+    },
+    "test": {
+      "n_imagens": 227,
+      "acuracia": 0.8105726838111877,
+      "bce": 0.4229665696620941,
+      "f1": 0.8054298642533937,
+      "matriz_confusao": [
+        [
+          95,
+          20
+        ],
+        [
+          23,
+          89
+        ]
+      ],
+      "limiar": 0.5,
+      "tempo_inferencia_s": 18.55426410000655,
+      "tempo_por_imagem_ms": 81.73684625553545
+    }
+  }
+}
