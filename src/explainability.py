@@ -18,14 +18,22 @@ class SuperpixelGraphExplainer:
         num_samples: int = 150,
         kernel_width: float = 0.25,
         device: str = "cpu",
+        t_baixo: float = 0.160,
+        t_alto: float = 0.253,
+        decision_threshold: float | None = None,
     ):
         self.model = model.to(device)
-        self.model.eval() #
+        self.model.eval()
         self.n_segments = n_segments
         self.compactness = compactness
         self.num_samples = num_samples
         self.kernel_width = kernel_width
         self.device = device
+        self.t_baixo = t_baixo
+        self.t_alto = t_alto
+        # Por padrão, qualquer caso fora de "Benigno" (>= t_baixo) explica evidências de malignidade
+        self.decision_threshold = t_baixo if decision_threshold is None else decision_threshold
+
         hparams = getattr(model, "hparams", None)
         self.input_height = getattr(hparams, "input_height", 224)
         self.input_width = getattr(hparams, "input_width", 224)
@@ -117,10 +125,11 @@ class SuperpixelGraphExplainer:
     def explain(self, pil_image: Image.Image, seed: int = 42):
         """
         Gera explicação completa para uma imagem PIL:
-        - prob_original: predição da CNN
-        - weights: importância de cada superpixel
-        - heatmap_overlay_b64: imagem PNG em base64 pronta para a API Flask
-        - fidelity_drop: queda de probabilidade ao remover os top-5 superpixels
+        - probabilidade: predição da CNN
+        - classificacao: faixa clínica ("Benigno", "Inconclusivo" ou "Maligno")
+        - node_weights: importância de cada superpixel
+        - overlay_base64: imagem PNG em base64 pronta para a API Flask
+        - fidelity_drop_top5: queda de probabilidade ao remover os top-5 superpixels
         """
         rng = np.random.default_rng(seed)
         img_resized = pil_image.convert("RGB").resize((self.input_width, self.input_height))
@@ -136,12 +145,20 @@ class SuperpixelGraphExplainer:
         perturbed_imgs = np.empty((self.num_samples, self.input_height, self.input_width, 3))
 
         for i in range(self.num_samples):
-            active_mask = Z[i][segments] > 0.5  # [224, 224]
+            active_mask = Z[i][segments] > 0.5
             img_p = np.where(active_mask[..., None], img_np, baseline_color)
             perturbed_imgs[i] = img_p
 
         probs = self._predict_batch(perturbed_imgs)
         prob_original = float(probs[0])
+
+        # Classificação em 3 faixas baseada nos limiares calibrados na validação
+        if prob_original >= self.t_alto:
+            classificacao = "Maligno"
+        elif prob_original >= self.t_baixo:
+            classificacao = "Inconclusivo"
+        else:
+            classificacao = "Benigno"
 
         # Distância cosseno / L2 entre Z e o vetor all-ones (imagem original)
         distances = np.linalg.norm(1.0 - Z, axis=1) / np.sqrt(num_nodes)
@@ -156,8 +173,8 @@ class SuperpixelGraphExplainer:
         pixel_map = node_weights[segments]
         pixel_map = gaussian_filter(pixel_map, sigma=3.0)
 
-        # Foco nas regiões que contribuem positivamente para a classe predita
-        target_map = pixel_map if prob_original >= 0.5 else -pixel_map
+        # Foco nas regiões que contribuem positivamente para a classe predita/alerta
+        target_map = pixel_map if prob_original >= self.decision_threshold else -pixel_map
         pos_map = np.maximum(target_map, 0)
         if pos_map.max() > 0:
             pos_map = pos_map / pos_map.max()
@@ -175,7 +192,7 @@ class SuperpixelGraphExplainer:
 
         # Teste rápido de fidelidade (mascarando top-5 superpixels)
         top_k = min(5, num_nodes)
-        order = np.argsort(-node_weights if prob_original >= 0.5 else node_weights)
+        order = np.argsort(-node_weights if prob_original >= self.decision_threshold else node_weights)
         top_nodes = order[:top_k]
         mask_fidelity = np.isin(segments, top_nodes)
         img_masked = np.where(mask_fidelity[..., None], baseline_color, img_np)
@@ -184,6 +201,7 @@ class SuperpixelGraphExplainer:
 
         return {
             "probabilidade": prob_original,
+            "classificacao": classificacao,
             "num_superpixels": num_nodes,
             "num_arestas": int(np.sum(adj > 0) // 2),
             "node_weights": node_weights.tolist(),
