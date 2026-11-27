@@ -1,27 +1,31 @@
-import torch
-from PIL import Image
-from torchvision import transforms
-from modelo_treinado import CancerClassifier
+"""
+    python -m pytest tests/test_modelo.py -s
+    python -m tests.test_modelo
+"""
+from pathlib import Path
 
-# carregar modelo
-model = CancerClassifier.load_from_checkpoint("melhor-modelo.ckpt", map_location="cpu")
-model.eval()
+import pytest
 
-# transformações (mesmas do app.py)
-transform = transforms.Compose([
-    transforms.Resize((224, 224)),
-    transforms.ToTensor(),
-    transforms.Normalize([0.485, 0.456, 0.406],
-                         [0.229, 0.224, 0.225]),
-])
+from src.inference import carregar_modelo, prever
 
-# carregar imagem
-img = Image.open("teste_boca.jpeg").convert("RGB")
-x = transform(img).unsqueeze(0)
+RAIZ = Path(__file__).resolve().parents[1]
+CKPT = RAIZ / "models" / "cnn_geral.ckpt"
+IMAGEM = RAIZ / "src" / "ehcancercaso1.png"
 
-# inferência
-with torch.no_grad():
-    y = model(x)
-    probs = torch.softmax(y, dim=1)[0]
-    print("Saída:", probs)
-    print("Classe predita:", torch.argmax(probs).item())
+
+@pytest.mark.skipif(not (CKPT.exists() and IMAGEM.exists()), reason="ckpt ou imagem de exemplo ausentes")
+def test_inferencia_retorna_probabilidade_valida():
+    modelo = carregar_modelo(CKPT)
+    saida = prever(modelo, IMAGEM)
+    assert 0.0 <= saida["probabilidade"] <= 1.0
+    assert saida["classe"] in {"Benigno", "Inconclusivo", "Maligno"}
+
+
+@pytest.mark.skipif(not (CKPT.exists() and IMAGEM.exists()), reason="ckpt ou imagem de exemplo ausentes")
+def test_inferencia_deterministica():
+    modelo = carregar_modelo(CKPT)
+    assert prever(modelo, IMAGEM) == prever(modelo, IMAGEM)
+
+
+if __name__ == "__main__":
+    print(prever(carregar_modelo(CKPT), IMAGEM))
