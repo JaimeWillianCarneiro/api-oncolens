@@ -1,0 +1,18 @@
+{
+  "study_name": "optuna_augmented",
+  "splits": "splits/splits.csv",
+  "raiz_imagens": "/kaggle/input/datasets/luizbravin/oncolens1/Oral Images Dataset/augmented_data",
+  "augment_treino": false,
+  "best_trial_number": 7,
+  "best_val_acc": 0.8341463208198547,
+  "best_val_loss": 0.47357824444770813,
+  "best_params": {
+    "kernel_size": 3,
+    "activation_name": "relu",
+    "learning_rate": 0.00024077254518890226,
+    "batch_size": 32,
+    "n_filters": 48,
+    "n_conv_layers": 3,
+    "dropout": 0.2
+  }
+}
