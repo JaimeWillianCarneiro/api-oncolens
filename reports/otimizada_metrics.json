@@ -1,0 +1,56 @@
+{
+  "ckpt": "models/cnn_otimizada.ckpt",
+  "splits": "splits/splits.csv",
+  "raiz_imagens": "/kaggle/input/datasets/luizbravin/oncolens1/Oral Images Dataset/augmented_data",
+  "augment_treino": false,
+  "hparams": {
+    "kernel_size": 3,
+    "activation_name": "relu",
+    "learning_rate": 0.00024077254518890226,
+    "batch_size": 32,
+    "n_filters": 48,
+    "n_conv_layers": 3,
+    "dropout": 0.2
+  },
+  "epocas_max": 25,
+  "epocas_executadas": 17,
+  "tempo_treino_s": 133.91334341100082,
+  "val": {
+    "n_imagens": 205,
+    "acuracia": 0.8146341443061829,
+    "bce": 0.4645536243915558,
+    "f1": 0.8118811881188119,
+    "matriz_confusao": [
+      [
+        85,
+        19
+      ],
+      [
+        19,
+        82
+      ]
+    ],
+    "limiar": 0.5,
+    "tempo_inferencia_s": 0.6372279489996799,
+    "tempo_por_imagem_ms": 3.1084290195106337
+  },
+  "test": {
+    "n_imagens": 227,
+    "acuracia": 0.850220263004303,
+    "bce": 0.35360443592071533,
+    "f1": 0.8468468468468469,
+    "matriz_confusao": [
+      [
+        99,
+        16
+      ],
+      [
+        18,
+        94
+      ]
+    ],
+    "limiar": 0.5,
+    "tempo_inferencia_s": 0.7356477940002151,
+    "tempo_por_imagem_ms": 3.2407391806176875
+  }
+}

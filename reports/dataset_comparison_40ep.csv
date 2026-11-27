@@ -1,0 +1,4 @@
+cenario,n_test,acuracia,bce,f1,sensibilidade_maligno,matriz_confusao,tempo_treino_s,tempo_por_imagem_ms
+augmented_offline,227,0.8458,1.1165,0.8372,0.8036,"[[102, 13], [22, 90]]",329.0,2.61
+original_puro,33,0.6061,1.7688,0.5806,0.5625,"[[11, 6], [7, 9]]",154.34,10.66
+original_augment_online,33,0.697,0.5697,0.6875,0.6875,"[[12, 5], [5, 11]]",167.06,10.49
