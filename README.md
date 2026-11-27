@@ -10,20 +10,91 @@ Authors of the original project:
 - Walléria Simões Correia
 - Jaime Willian Carneiro da Silva
 
+Mudanças implementadas em novembro de 2026
+- Jaime Willian Carneiro da Silva
+- Luiz Eduardo Bravin
 
-Comandos:
+
+1. Geração dos splits fixos
 ```
-python -m pytest tests
+# A partir do arquivo .zip original (extrai e gera splits/splits.csv)
+python -m scripts.gerar_splits \
+  --zip mhjyrn35p4-2.zip \
+  --pasta-dados dados
+
+# Ou a partir da pasta augmented_data já extraída
+python -m scripts.gerar_splits \
+  --raiz-imagens "dados/Oral Images Dataset/augmented_data" \
+  --saida splits/splits.csv
+
+# Split separado para o conjunto original (sem augmentation offline)
+python -m scripts.gerar_splits \
+  --raiz-imagens "dados/Oral Images Dataset/original_data" \
+  --saida splits/splits_original.csv
 ```
+2. Comparação de datasets (Original vs. Augment)
 ```
-python -m scripts.gerar_splits --raiz-imagens data/augmented_data
+python -m scripts.comparar_datasets \
+  --splits-augmented splits/splits.csv \
+  --raiz-augmented "dados/Oral Images Dataset/augmented_data" \
+  --splits-original splits/splits_original.csv \
+  --raiz-original "dados/Oral Images Dataset/original_data" \
+  --epocas 40 \
+  --batch 16
 ```
+3. Avaliação e retreino do baseline
 ```
-python -m pytest tests
+python -m scripts.baseline \
+  --ckpt models/cnn_geral.ckpt \
+  --splits splits/splits.csv \
+  --raiz-imagens "dados/Oral Images Dataset/augmented_data" \
+  --retreinar \
+  --epocas 10 \
+  --batch 64
 ```
+4. Otimização de hiperparâmetros com Optuna
 ```
-python -m scripts.baseline --raiz-imagens data/augmented_data --retreinar
+# Opcional: limpa estudo anterior do SQLite
+rm -f optuna_cnn.db
+
+python -m src.otimizacao \
+  --splits splits/splits.csv \
+  --raiz-imagens "dados/Oral Images Dataset/augmented_data" \
+  --batch-sizes 16 32 64 \
+  --n-trials 12 \
+  --epocas 15 \
+  --patience 4 \
+  --nome optuna_augmented
 ```
+5. Treinamento final do modelo otimizado
 ```
-python -m src.otimizacao --raiz-imagens data/augmented_data --n-trials 10 --epocas 10
+python -m scripts.treinar_otimizada \
+  --params reports/optuna_best_params.json \
+  --splits splits/splits.csv \
+  --raiz-imagens "dados/Oral Images Dataset/augmented_data" \
+  --epocas 25 \
+  --patience 5
+```
+6. Comparação final de modelos e limiares operacionais
+```
+# Usando os limiares padrão configurados em src/inference.py (0.16 e 0.461)
+python -m scripts.comparar_modelos \
+  --splits splits/splits.csv \
+  --raiz-imagens "dados/Oral Images Dataset/augmented_data"
+
+# Ou especificando os limiares explicitamente via CLI
+python -m scripts.comparar_modelos \
+  --splits splits/splits.csv \
+  --raiz-imagens "dados/Oral Images Dataset/augmented_data" \
+  --limiar-benigno 0.16 \
+  --limiar-maligno 0.461
+```
+7. Execução dos testes automatizados
+```
+# Suíte completa
+python -m pytest -v
+
+# Execução isolada por arquivo
+python -m pytest tests/test_modelo.py -v
+python -m pytest tests/test_api.py -v
 ```
