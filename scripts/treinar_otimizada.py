@@ -53,7 +53,6 @@ def main():
         activation_name=str(params.get("activation_name", "relu")),
         dropout=float(params["dropout"]),
         learning_rate=float(params["learning_rate"]),
-        weight_decay=float(params.get("weight_decay", 0.0)),
         input_channels=3,
         input_height=TAMANHO_IMAGEM[0],
         input_width=TAMANHO_IMAGEM[1],

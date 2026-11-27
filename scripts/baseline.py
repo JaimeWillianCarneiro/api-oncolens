@@ -44,7 +44,7 @@ def main():
     ap.add_argument("--saida-ckpt", default="models/baseline_splits_fixos.ckpt")
     a = ap.parse_args()
 
-    device = "xpu"  # avaliação simples e reprodutível; o treino usa accelerator="auto"
+    device = "cuda" if __import__("torch").cuda.is_available() else "cpu"  # avaliação simples e reprodutível; o treino usa accelerator="auto"
     L.seed_everything(SEMENTE_TREINO, workers=True)
 
     original = carregar_modelo(a.ckpt, device)

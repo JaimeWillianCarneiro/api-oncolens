@@ -1,0 +1,146 @@
+{
+  "augmented_offline": {
+    "cenario": "augmented_offline",
+    "splits": "splits/splits.csv",
+    "raiz_imagens": "/kaggle/input/datasets/luizbravin/oncolens1/Oral Images Dataset/augmented_data",
+    "augment_treino": false,
+    "epocas": 40,
+    "batch_size": 16,
+    "tempo_treino_s": 328.9983976840001,
+    "ckpt": "models/comparacao_datasets/baseline_augmented_offline.ckpt",
+    "val": {
+      "n_imagens": 205,
+      "acuracia": 0.8243902325630188,
+      "bce": 1.483810544013977,
+      "f1": 0.8144329896907216,
+      "matriz_confusao": [
+        [
+          90,
+          14
+        ],
+        [
+          22,
+          79
+        ]
+      ],
+      "limiar": 0.5,
+      "tempo_inferencia_s": 0.5627991240000938,
+      "tempo_por_imagem_ms": 2.7453615804882623
+    },
+    "test": {
+      "n_imagens": 227,
+      "acuracia": 0.8458150029182434,
+      "bce": 1.1164541244506836,
+      "f1": 0.8372093023255814,
+      "matriz_confusao": [
+        [
+          102,
+          13
+        ],
+        [
+          22,
+          90
+        ]
+      ],
+      "limiar": 0.5,
+      "tempo_inferencia_s": 0.591714280999895,
+      "tempo_por_imagem_ms": 2.606670841409229
+    }
+  },
+  "original_puro": {
+    "cenario": "original_puro",
+    "splits": "splits/splits_original.csv",
+    "raiz_imagens": "/kaggle/input/datasets/luizbravin/oncolens1/Oral Images Dataset/original_data",
+    "augment_treino": false,
+    "epocas": 40,
+    "batch_size": 16,
+    "tempo_treino_s": 154.34032925799988,
+    "ckpt": "models/comparacao_datasets/baseline_original_puro.ckpt",
+    "val": {
+      "n_imagens": 29,
+      "acuracia": 0.5517241358757019,
+      "bce": 2.252307415008545,
+      "f1": 0.5517241379310345,
+      "matriz_confusao": [
+        [
+          8,
+          7
+        ],
+        [
+          6,
+          8
+        ]
+      ],
+      "limiar": 0.5,
+      "tempo_inferencia_s": 0.3628159780000715,
+      "tempo_por_imagem_ms": 12.510895793105913
+    },
+    "test": {
+      "n_imagens": 33,
+      "acuracia": 0.6060606241226196,
+      "bce": 1.7688086032867432,
+      "f1": 0.5806451612903226,
+      "matriz_confusao": [
+        [
+          11,
+          6
+        ],
+        [
+          7,
+          9
+        ]
+      ],
+      "limiar": 0.5,
+      "tempo_inferencia_s": 0.351831693999884,
+      "tempo_por_imagem_ms": 10.66156648484497
+    }
+  },
+  "original_augment_online": {
+    "cenario": "original_augment_online",
+    "splits": "splits/splits_original.csv",
+    "raiz_imagens": "/kaggle/input/datasets/luizbravin/oncolens1/Oral Images Dataset/original_data",
+    "augment_treino": true,
+    "epocas": 40,
+    "batch_size": 16,
+    "tempo_treino_s": 167.06420297700015,
+    "ckpt": "models/comparacao_datasets/baseline_original_augment_online.ckpt",
+    "val": {
+      "n_imagens": 29,
+      "acuracia": 0.6206896305084229,
+      "bce": 0.6523978114128113,
+      "f1": 0.5217391304347826,
+      "matriz_confusao": [
+        [
+          12,
+          3
+        ],
+        [
+          8,
+          6
+        ]
+      ],
+      "limiar": 0.5,
+      "tempo_inferencia_s": 0.38286113100002694,
+      "tempo_por_imagem_ms": 13.20210796551817
+    },
+    "test": {
+      "n_imagens": 33,
+      "acuracia": 0.6969696879386902,
+      "bce": 0.5697192549705505,
+      "f1": 0.6875,
+      "matriz_confusao": [
+        [
+          12,
+          5
+        ],
+        [
+          5,
+          11
+        ]
+      ],
+      "limiar": 0.5,
+      "tempo_inferencia_s": 0.3460616209999898,
+      "tempo_por_imagem_ms": 10.48671578787848
+    }
+  }
+}
