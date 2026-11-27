@@ -25,7 +25,15 @@ def test_inferencia_retorna_probabilidade_valida():
 def test_inferencia_deterministica():
     modelo = carregar_modelo(CKPT)
     assert prever(modelo, IMAGEM) == prever(modelo, IMAGEM)
+from src.inference import rotular
 
+
+def test_faixas_de_rotulagem():
+    assert rotular(0.19) == "Benigno"
+    assert rotular(0.20) == "Benigno"
+    assert rotular(0.21) == "Inconclusivo"
+    assert rotular(0.40) == "Inconclusivo"
+    assert rotular(0.41) == "Maligno"
 
 if __name__ == "__main__":
     print(prever(carregar_modelo(CKPT), IMAGEM))
