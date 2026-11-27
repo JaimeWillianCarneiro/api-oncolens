@@ -73,8 +73,9 @@ def create_app(caminho_ckpt: str | Path | None = None, device: str = "cpu") -> F
             }
 
             if request.args.get("explicar", "").lower() in {"1", "true", "sim"}:
-                exp = explainer.explain(imagem)
+                exp = explainer.explain(imagem, seed=42)
                 resposta["explicabilidade"] = {
+                    "classificacao": exp["classificacao"],
                     "num_superpixels": exp["num_superpixels"],
                     "num_arestas": exp["num_arestas"],
                     "fidelity_drop_top5": float(exp["fidelity_drop_top5"]),
