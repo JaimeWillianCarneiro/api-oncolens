@@ -7,7 +7,7 @@ from skimage.segmentation import slic, mark_boundaries
 from scipy.ndimage import gaussian_filter
 from sklearn.linear_model import Ridge
 import matplotlib.cm as cm
-
+from src.inference import LIMIAR_MALIGNO
 
 class SuperpixelGraphExplainer:
     def __init__(
@@ -156,8 +156,9 @@ class SuperpixelGraphExplainer:
         pixel_map = node_weights[segments]
         pixel_map = gaussian_filter(pixel_map, sigma=3.0)
 
+        
         # Foco nas regiões que contribuem positivamente para a classe predita
-        target_map = pixel_map if prob_original >= 0.5 else -pixel_map
+        target_map = pixel_map if prob_original > LIMIAR_MALIGNO else -pixel_map
         pos_map = np.maximum(target_map, 0)
         if pos_map.max() > 0:
             pos_map = pos_map / pos_map.max()
@@ -175,7 +176,7 @@ class SuperpixelGraphExplainer:
 
         # Teste rápido de fidelidade (mascarando top-5 superpixels)
         top_k = min(5, num_nodes)
-        order = np.argsort(-node_weights if prob_original >= 0.5 else node_weights)
+        order = np.argsort(-node_weights if prob_original > LIMIAR_MALIGNO else node_weights)
         top_nodes = order[:top_k]
         mask_fidelity = np.isin(segments, top_nodes)
         img_masked = np.where(mask_fidelity[..., None], baseline_color, img_np)

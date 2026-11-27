@@ -25,8 +25,18 @@ SEMENTE_TREINO = 1110
 SEMENTE_OPTUNA = 1110
 
 # Hiperparâmetros fixos para manter o espaço enxuto (mesmos da CNN baseline)
-FIXOS = {"kernel_size": 3, "activation_name": "relu", "dropout": 0.0}
+FIXOS = {"kernel_size": 3, "activation_name": "relu"}
 
+
+def sugerir_hiperparametros(trial: optuna.Trial, batch_sizes: list[int] | None = None) -> dict:
+    opcoes_batch = batch_sizes or [16, 32, 64]
+    return {
+        "learning_rate": trial.suggest_float("learning_rate", 1e-4, 5e-3, log=True),
+        "batch_size": trial.suggest_categorical("batch_size", opcoes_batch),
+        "n_filters": trial.suggest_int("n_filters", 16, 64, step=16),
+        "n_conv_layers": trial.suggest_int("n_conv_layers", 2, 3),
+        "dropout": trial.suggest_float("dropout", 0.0, 0.4, step=0.1),
+    }
 
 class OptunaPruningCallback(Callback):
     """Reporta val_acc ao Optuna a cada época e guarda o melhor ponto do trial."""
@@ -52,17 +62,6 @@ class OptunaPruningCallback(Callback):
         self.trial.report(val_acc, step=trainer.current_epoch)
         if self.trial.should_prune():
             raise optuna.TrialPruned()
-
-
-def sugerir_hiperparametros(trial: optuna.Trial, batch_sizes: list[int] | None = None) -> dict:
-    """Espaço de busca enxuto: LR, batch, filtros e profundidade."""
-    opcoes_batch = batch_sizes or [32, 64, 128]
-    return {
-        "learning_rate": trial.suggest_float("learning_rate", 1e-4, 1e-2, log=True),
-        "batch_size": trial.suggest_categorical("batch_size", opcoes_batch),
-        "n_filters": trial.suggest_int("n_filters", 16, 64, step=16),
-        "n_conv_layers": trial.suggest_int("n_conv_layers", 1, 3),
-    }
 
 
 def criar_objective(
@@ -92,6 +91,7 @@ def criar_objective(
         modelo = CNNLightning(
             n_conv_layers=hp["n_conv_layers"],
             n_filters=hp["n_filters"],
+            dropout=hp["dropout"],
             learning_rate=hp["learning_rate"],
             input_channels=3,
             input_height=tamanho[0],
