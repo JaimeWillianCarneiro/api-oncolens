@@ -19,7 +19,7 @@ class SuperpixelGraphExplainer:
         kernel_width: float = 0.25,
         device: str = "cpu",
         t_baixo: float = 0.160,
-        t_alto: float = 0.253,
+        t_alto: float = 0.461,
         decision_threshold: float | None = None,
     ):
         self.model = model.to(device)
