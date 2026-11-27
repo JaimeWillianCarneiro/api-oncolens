@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from src.inference import carregar_modelo, prever
+from src.inference import carregar_modelo, prever, rotular
 
 RAIZ = Path(__file__).resolve().parents[1]
 CKPT = RAIZ / "models" / "cnn_geral.ckpt"
@@ -25,14 +25,15 @@ def test_inferencia_retorna_probabilidade_valida():
 def test_inferencia_deterministica():
     modelo = carregar_modelo(CKPT)
     assert prever(modelo, IMAGEM) == prever(modelo, IMAGEM)
-from src.inference import rotular
+
 
 def test_faixas_de_rotulagem():
+    assert rotular(0.10) == "Benigno"
     assert rotular(0.15) == "Benigno"
-    assert rotular(0.16) == "Benigno"
-    assert rotular(0.17) == "Inconclusivo"
-    assert rotular(0.416) == "Inconclusivo"
-    assert rotular(0.417) == "Maligno"
+    assert rotular(0.19) == "Inconclusivo"
+    assert rotular(0.30) == "Inconclusivo"
+    assert rotular(0.50) == "Maligno"
+
 
 if __name__ == "__main__":
     print(prever(carregar_modelo(CKPT), IMAGEM))
