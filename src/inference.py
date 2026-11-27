@@ -25,8 +25,8 @@ from src.data import TAMANHO_IMAGEM, transform_padrao
 from src.modelo_treinado import CNN, CNNLightning
 
 # Faixas que estavam comentadas no final de modelo_treinado.py
-LIMIAR_MALIGNO = 0.4
-LIMIAR_BENIGNO = 0.2
+LIMIAR_MALIGNO = 0.461
+LIMIAR_BENIGNO = 0.16
 
 Imagem = Union[str, Path, Image.Image, np.ndarray]
 
