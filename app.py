@@ -1,69 +1,95 @@
-# app.py
-from flask import Flask, request, jsonify
-from flask_cors import CORS
-import torch
-from torchvision import transforms
-from PIL import Image
 import io
-from src.modelo_treinado import CNN  
+import os
+from pathlib import Path
 
-app = Flask(__name__)
+from flask import Flask, jsonify, request
+from flask_cors import CORS
+from PIL import Image, UnidentifiedImageError
 
-CORS(app, resources={r"/analisar": {"origins": "https://jaimewilliancarneiro.github.io"}})
+from src.explainability import SuperpixelGraphExplainer
+from src.inference import carregar_modelo, prever
 
-# ===============================
-# 1️⃣ Carregar modelo treinado
-# ===============================
-model = CNN.load_from_checkpoint("cnn_geral.ckpt", map_location=torch.device("cpu"))
-model.eval()
+RAIZ = Path(__file__).resolve().parent
+CKPT_PADRAO = RAIZ / "models" / "cnn_otimizada.ckpt"
+CKPT_FALLBACK = RAIZ / "models" / "cnn_geral.ckpt"
 
-# ===============================
-# 2️⃣ Transformações iguais às do treino
-# ===============================
-transform = transforms.Compose([
-    transforms.Resize((224, 224)),  # ajusta ao tamanho esperado
-    transforms.ToTensor(),
-])
 
-# ===============================
-# 3️⃣ Rota para análise
-# ===============================
-@app.route('/analisar', methods=['POST'])
-def analisar_imagem():
-    if 'imagem' not in request.files:
-        return jsonify({'erro': 'Nenhuma imagem enviada'}), 400
+def _resolver_ckpt(caminho_ckpt: str | Path | None = None) -> Path:
+    if caminho_ckpt:
+        return Path(caminho_ckpt)
+    env_ckpt = os.environ.get("MODEL_PATH")
+    if env_ckpt:
+        return Path(env_ckpt)
+    return CKPT_PADRAO if CKPT_PADRAO.exists() else CKPT_FALLBACK
 
-    try:
-        arquivo = request.files['imagem']
-        imagem = Image.open(io.BytesIO(arquivo.read())).convert("RGB")
 
-        # aplica transformações
-        tensor = transform(imagem).unsqueeze(0)  # [1, C, H, W]
+def create_app(caminho_ckpt: str | Path | None = None, device: str = "cpu") -> Flask:
+    app = Flask(__name__)
+    CORS(
+        app,
+        resources={
+            r"/analisar": {"origins": "https://jaimewilliancarneiro.github.io"},
+            r"/health": {"origins": "*"},
+        },
+    )
 
-        with torch.no_grad():
-            prob = model(tensor).item()
+    ckpt_path = _resolver_ckpt(caminho_ckpt)
+    modelo = carregar_modelo(ckpt_path, device=device)
+    explainer = SuperpixelGraphExplainer(modelo, device=device)
 
-        # interpreta o resultado
-        if prob > 0.6:
-            classe = "Maligno"
-        elif prob > 0.4:
-            classe = "Inconclusivo"
-        else:
-            classe = "Benigno"
+    app.config["MODEL_PATH"] = str(ckpt_path)
+    app.config["MODEL_CLASS"] = type(modelo).__name__
 
+    @app.route("/health", methods=["GET"])
+    def health():
         return jsonify({
-            "resultado": classe,
-            "probabilidade": float(prob)
-        })
+            "status": "ok",
+            "modelo": app.config["MODEL_CLASS"],
+            "checkpoint": Path(app.config["MODEL_PATH"]).name,
+        }), 200
 
-    except Exception as e:
-        print("Erro na análise:", e)
-        return jsonify({"erro": str(e)}), 500
+    @app.route("/analisar", methods=["POST"])
+    def analisar_imagem():
+        if "imagem" not in request.files:
+            return jsonify({"erro": "Nenhuma imagem enviada"}), 400
 
-# # ===============================
-# # 4️⃣ Rodar servidor
-# # ===============================
-# if __name__ == "__main__":
-#     import os
-#     port = int(os.environ.get("PORT", 8080))  # pega a porta do Cloud Run ou usa 8080
-#     app.run(host="0.0.0.0", port=port)
+        arquivo = request.files["imagem"]
+        if not arquivo.filename:
+            return jsonify({"erro": "Arquivo de imagem vazio"}), 400
+
+        try:
+            conteudo = arquivo.read()
+            if not conteudo:
+                return jsonify({"erro": "Arquivo de imagem vazio"}), 400
+            imagem = Image.open(io.BytesIO(conteudo)).convert("RGB")
+        except (UnidentifiedImageError, OSError):
+            return jsonify({"erro": "Arquivo enviado não é uma imagem válida"}), 400
+
+        try:
+            saida = prever(modelo, imagem)
+            resposta = {
+                "resultado": saida["classe"],
+                "probabilidade": float(saida["probabilidade"]),
+            }
+
+            if request.args.get("explicar", "").lower() in {"1", "true", "sim"}:
+                exp = explainer.explain(imagem)
+                resposta["explicabilidade"] = {
+                    "num_superpixels": exp["num_superpixels"],
+                    "num_arestas": exp["num_arestas"],
+                    "fidelity_drop_top5": float(exp["fidelity_drop_top5"]),
+                    "overlay_base64": exp["overlay_base64"],
+                }
+
+            return jsonify(resposta), 200
+        except Exception as e:
+            return jsonify({"erro": f"Erro interno na análise: {e}"}), 500
+
+    return app
+
+
+app = create_app()
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 8080))
+    app.run(host="0.0.0.0", port=port)
