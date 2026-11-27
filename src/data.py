@@ -26,7 +26,7 @@ from torch.utils.data import DataLoader, Dataset
 from torchvision import transforms
 
 # --- Constantes (valores vindos do notebook de treinamento / explainability.py)
-TAMANHO_IMAGEM = (224, 224)   # explainability.py e notebook 04 usam 224x224
+TAMANHO_IMAGEM = (304, 304)   # explainability.py e notebook 04 usam 224x224
 FRACAO_TESTE = 0.1            # notebook: test_size = 1/10
 FRACAO_VALIDACAO = 0.1        # notebook: 1/10 do que sobrou após separar o teste
 SEMENTE_SPLIT = 1110          # SEMENTE_ALEATORIA do notebook
@@ -36,6 +36,31 @@ PASTA_BENIGNO = "augmented_benign"    # label 0
 PASTA_MALIGNO = "augmented_malignant"  # label 1
 COLUNAS_SPLIT = ["path", "label", "split"]
 
+CONJUNTOS_PASTAS = (
+    ("augmented_benign", "augmented_malignant"),
+    ("benign_lesions", "malignant_lesions"),
+)
+EXTENSOES_IMAGEM = {".jpg", ".jpeg", ".png"}
+
+
+def _resolver_pastas_classes(raiz: Path) -> tuple[str, str]:
+    for pasta_ben, pasta_mal in CONJUNTOS_PASTAS:
+        if (raiz / pasta_ben).is_dir() and (raiz / pasta_mal).is_dir():
+            return pasta_ben, pasta_mal
+    esperadas = ", ".join(f"{b}/{m}" for b, m in CONJUNTOS_PASTAS)
+    raise FileNotFoundError(f"Subpastas de classes não encontradas em {raiz}. Esperado: {esperadas}")
+
+
+def transform_treino_augment(tamanho=TAMANHO_IMAGEM) -> transforms.Compose:
+    """Augmentation on-the-fly apenas no treino, mantendo pixels em [0, 1] sem Normalize."""
+    return transforms.Compose([
+        transforms.Resize(tamanho),
+        transforms.RandomHorizontalFlip(p=0.5),
+        transforms.RandomVerticalFlip(p=0.2),
+        transforms.RandomRotation(degrees=15),
+        transforms.ColorJitter(brightness=0.15, contrast=0.15, saturation=0.1),
+        transforms.ToTensor(),
+    ])
 
 # ----------------------------------------------------------------------------
 # Preparação / listagem dos dados
@@ -50,15 +75,29 @@ def preparar_dados(caminho_zip: str | Path, pasta_destino: str | Path) -> Path:
     return raiz
 
 
-def listar_imagens(raiz_imagens: str | Path) -> pd.DataFrame:
+def listar_imagens(
+    raiz_imagens: str | Path,
+    pasta_benigno: str | None = None,
+    pasta_maligno: str | None = None,
+) -> pd.DataFrame:
     """DataFrame [path (relativo à raiz), label] em ordem determinística."""
     raiz = Path(raiz_imagens)
+    if pasta_benigno is None or pasta_maligno is None:
+        pasta_benigno, pasta_maligno = _resolver_pastas_classes(raiz)
+
     linhas = []
-    for pasta, label in ((PASTA_BENIGNO, 0), (PASTA_MALIGNO, 1)):
-        for p in sorted((raiz / pasta).glob("*.jpg")):
+    for pasta, label in ((pasta_benigno, 0), (pasta_maligno, 1)):
+        arquivos = sorted(
+            p for p in (raiz / pasta).iterdir()
+            if p.is_file() and p.suffix.lower() in EXTENSOES_IMAGEM
+        )
+        for p in arquivos:
             linhas.append({"path": p.relative_to(raiz).as_posix(), "label": label})
+
     if not linhas:
-        raise FileNotFoundError(f"Nenhuma .jpg encontrada em {raiz}/{{{PASTA_BENIGNO},{PASTA_MALIGNO}}}")
+        raise FileNotFoundError(
+            f"Nenhuma imagem ({sorted(EXTENSOES_IMAGEM)}) encontrada em {raiz}/{{{pasta_benigno},{pasta_maligno}}}"
+        )
     return pd.DataFrame(linhas)
 
 
@@ -172,19 +211,28 @@ class OralCancerDatasetDF(Dataset):
 
 
 class DataModule(L.LightningDataModule):
-    """Lê o CSV de splits fixos. batch_size agora é parâmetro (antes fixo em 64)."""
+    """Lê o CSV de splits fixos. Suporta augmentation on-the-fly apenas no treino."""
 
-    def __init__(self, splits_csv: str | Path, raiz_imagens: str | Path,
-                 batch_size: int = 64, num_workers: int = 2, tamanho=TAMANHO_IMAGEM):
+    def __init__(
+        self,
+        splits_csv: str | Path,
+        raiz_imagens: str | Path,
+        batch_size: int = 64,
+        num_workers: int = 2,
+        tamanho=TAMANHO_IMAGEM,
+        augment_treino: bool = False,
+    ):
         super().__init__()
         self.splits = carregar_splits(splits_csv)
         self.raiz = Path(raiz_imagens)
         self.batch_size = batch_size
         self.num_workers = num_workers
         self.transform = transform_padrao(tamanho)
+        self.transform_treino = transform_treino_augment(tamanho) if augment_treino else self.transform
 
     def _ds(self, nome: str) -> OralCancerDatasetDF:
-        return OralCancerDatasetDF(self.splits[self.splits["split"] == nome], self.raiz, self.transform)
+        tf = self.transform_treino if nome == "train" else self.transform
+        return OralCancerDatasetDF(self.splits[self.splits["split"] == nome], self.raiz, tf)
 
     def setup(self, stage=None):
         if stage in ("fit", None):
@@ -195,9 +243,13 @@ class DataModule(L.LightningDataModule):
             self.test = self._ds("test")
 
     def _dl(self, ds, shuffle):
-        return DataLoader(ds, batch_size=self.batch_size, shuffle=shuffle,
-                          num_workers=self.num_workers,
-                          persistent_workers=self.num_workers > 0)
+        return DataLoader(
+            ds,
+            batch_size=self.batch_size,
+            shuffle=shuffle,
+            num_workers=self.num_workers,
+            persistent_workers=self.num_workers > 0,
+        )
 
     def train_dataloader(self):
         return self._dl(self.train, True)

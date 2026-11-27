@@ -30,6 +30,14 @@ LIMIAR_BENIGNO = 0.4
 
 Imagem = Union[str, Path, Image.Image, np.ndarray]
 
+def resolver_device(device: str = "auto") -> str:
+    if device != "auto":
+        return device
+    if torch.cuda.is_available():
+        return "cuda"
+    if hasattr(torch, "xpu") and torch.xpu.is_available():
+        return "xpu"
+    return "cpu"
 
 def _classe_do_checkpoint(ckpt: dict):
     chaves = list(ckpt["state_dict"].keys())

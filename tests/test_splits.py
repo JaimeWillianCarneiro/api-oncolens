@@ -1,7 +1,7 @@
 import pandas as pd
 import pytest
-
-from src.data import gerar_splits, verificar_sem_vazamento
+from PIL import Image
+from src.data import DataModule, listar_imagens, salvar_splits, gerar_splits, verificar_sem_vazamento
 
 
 def _df(n=400):
@@ -35,3 +35,28 @@ def test_detecta_vazamento_de_grupo():
     s["grupo"] = "g"
     with pytest.raises(ValueError):
         verificar_sem_vazamento(s)
+
+def test_listar_imagens_detecta_original_data(tmp_path):
+    for sub in ("benign_lesions", "malignant_lesions"):
+        (tmp_path / sub).mkdir()
+        Image.new("RGB", (32, 32)).save(tmp_path / sub / "amostra.png")
+    df = listar_imagens(tmp_path)
+    assert len(df) == 2
+    assert set(df["label"]) == {0, 1}
+
+
+def test_augment_apenas_no_treino(tmp_path):
+    for sub in ("benign_lesions", "malignant_lesions"):
+        (tmp_path / sub).mkdir()
+        for i in range(15):
+            Image.new("RGB", (32, 32)).save(tmp_path / sub / f"img_{i}.jpg")
+    df = listar_imagens(tmp_path)
+    splits = gerar_splits(df, semente=42)
+    csv_path = tmp_path / "splits.csv"
+    salvar_splits(splits, csv_path)
+
+    dm = DataModule(csv_path, tmp_path, batch_size=4, num_workers=0, augment_treino=True)
+    dm.setup()
+    assert dm.train.transform is dm.transform_treino
+    assert dm.val.transform is dm.transform
+    assert dm.test.transform is dm.transform
