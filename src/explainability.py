@@ -206,6 +206,7 @@ class SuperpixelGraphExplainer:
             "num_arestas": int(np.sum(adj > 0) // 2),
             "node_weights": node_weights.tolist(),
             "fidelity_drop_top5": fidelity_drop,
+            "heatmap": pos_map,
             "overlay_image": overlay_uint8,
             "overlay_base64": overlay_b64,
         }
