@@ -27,13 +27,12 @@ def test_inferencia_deterministica():
     assert prever(modelo, IMAGEM) == prever(modelo, IMAGEM)
 from src.inference import rotular
 
-
 def test_faixas_de_rotulagem():
-    assert rotular(0.19) == "Benigno"
-    assert rotular(0.20) == "Benigno"
-    assert rotular(0.21) == "Inconclusivo"
-    assert rotular(0.40) == "Inconclusivo"
-    assert rotular(0.41) == "Maligno"
+    assert rotular(0.15) == "Benigno"
+    assert rotular(0.16) == "Benigno"
+    assert rotular(0.17) == "Inconclusivo"
+    assert rotular(0.416) == "Inconclusivo"
+    assert rotular(0.417) == "Maligno"
 
 if __name__ == "__main__":
     print(prever(carregar_modelo(CKPT), IMAGEM))
