@@ -10,10 +10,13 @@ Authors of the original project:
 - Walléria Simões Correia
 - Jaime Willian Carneiro da Silva
 
-Mudanças implementadas em novembro de 2026
+Mudanças implementadas em novembro de 2026: Retreino com novos limiares, adicionamos explicabilidade com supernós
 - Jaime Willian Carneiro da Silva
 - Luiz Eduardo Bravin
 
+
+
+### Execute o código à sua maneira
 
 1. Geração dos splits fixos
 ```
