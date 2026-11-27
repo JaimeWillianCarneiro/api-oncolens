@@ -64,17 +64,6 @@ class OptunaPruningCallback(Callback):
             raise optuna.TrialPruned()
 
 
-def sugerir_hiperparametros(trial: optuna.Trial, batch_sizes: list[int] | None = None) -> dict:
-    """Espaço de busca enxuto: LR, batch, filtros e profundidade."""
-    opcoes_batch = batch_sizes or [32, 64, 128]
-    return {
-        "learning_rate": trial.suggest_float("learning_rate", 1e-4, 1e-2, log=True),
-        "batch_size": trial.suggest_categorical("batch_size", opcoes_batch),
-        "n_filters": trial.suggest_int("n_filters", 16, 64, step=16),
-        "n_conv_layers": trial.suggest_int("n_conv_layers", 1, 3),
-    }
-
-
 def criar_objective(
     splits_csv,
     raiz_imagens,
