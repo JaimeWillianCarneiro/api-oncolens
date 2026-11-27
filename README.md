@@ -9,3 +9,21 @@ Authors of the original project:
 - Julia Guedes Almeida do Santos
 - Walléria Simões Correia
 - Jaime Willian Carneiro da Silva
+
+
+Comandos:
+```
+python -m pytest tests
+```
+```
+python -m scripts.gerar_splits --raiz-imagens data/augmented_data
+```
+```
+python -m pytest tests
+```
+```
+python -m scripts.baseline --raiz-imagens data/augmented_data --retreinar
+```
+```
+python -m src.otimizacao --raiz-imagens data/augmented_data --n-trials 10 --epocas 10
+```
